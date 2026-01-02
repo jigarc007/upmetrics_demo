@@ -70,7 +70,8 @@ const TaskBoardApp = () => {
   // Board CRUD operations
   const createBoard = () => {
     if (boardName.trim()) {
-    api.post('/column/add', { name: boardName, position: 0 })
+      const user=JSON.parse(localStorage.getItem('user'));
+      api.post('/column/add', { name: boardName, position: 0, userId: user.id })
       .then(response => {  
         const newBoard = response.data.data;
         setBoards([...boards, { id: newBoard._id, name: newBoard.name, tasks: [] }]);
@@ -86,19 +87,27 @@ const TaskBoardApp = () => {
     }
   };
 
-  const updateBoard = () => {
+  const updateBoard = async() => {
     if (boardName.trim() && editingBoard) {
-      setBoards(boards.map(b => 
-        b.id === editingBoard.id ? { ...b, name: boardName } : b
-      ));
+      const res = await api.put(`/column/update/${editingBoard.id}`, { name: boardName })
+      if (res.status === 200) {
+        setBoards(boards.map(b =>
+          b.id === editingBoard.id ? { ...b, name: boardName } : b
+        ));
+        toast.success('Board updated sucessfully');
+      }
       setBoardName('');
       setEditingBoard(null);
       setShowBoardModal(false);
     }
   };
 
-  const deleteBoard = (boardId) => {
-    setBoards(boards.filter(b => b.id !== boardId));
+  const deleteBoard = async(boardId) => {
+    const res=await api.delete(`/column/del/${boardId}`);
+    if(res.status===200){
+      toast.success('Board deleted successfully');
+      setBoards(boards.filter(b => b.id !== boardId));
+    }
   };
 
   const openEditBoard = (board) => {
@@ -121,7 +130,7 @@ const TaskBoardApp = () => {
         dueDate: taskDueDate || null
       });
       const newTask = {
-        id: Date.now(),
+        id: createdTask?.data?.task?._id,
         title: taskTitle,
         description: taskDescription,
         dueDate: taskDueDate || '',
@@ -964,6 +973,24 @@ const handleDrop = async (e, targetBoardId, targetIndex) => {
               <div style={styles.boardHeader}>
                 <div style={styles.boardHeaderTop}>
                   <h2 style={styles.boardTitle}>{board.name}</h2>
+                   <div style={styles.iconBtnGroup}>
+                    <button
+                      style={styles.iconBtn}
+                      onClick={() => openEditBoard(board)}
+                      onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'}
+                      onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+                    >
+                      <Edit2 size={18} />
+                    </button>
+                    <button
+                      style={styles.iconBtn}
+                      onClick={() => deleteBoard(board.id)}
+                      onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'}
+                      onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
                 </div>
                 <button
                   style={styles.addTaskBtn}

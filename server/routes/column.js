@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Column = require('../schema/column');   
-
+const task = require('../schema/task');
 router.post('/add', async (req, res) => {
   try {
     let result;
@@ -31,11 +31,38 @@ router.post('/add', async (req, res) => {
   }
 });
 
-
-router.get('/get', async (req, res) => {
+router.put('/update/:id',async (req,res)=>{
+  try {
+    console.log("column updated:>",req.body)
+      const column = await Column.findOneAndUpdate(
+        { _id: req.params.id, userId: req.user.userId }, // owner check
+        req.body,
+        { new: true }
+      );
+  
+      if (!column) {
+        return res.status(404).json({
+          message: 'Column not found or unauthorized',
+        });
+      }
+  
+      res.json({
+        message: 'Column updated successfully',
+        column,
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: 'Failed to update task',
+        error: error.message,
+      });
+    }
+})
+router.delete('/del/:id', async (req, res) => {
     try {
-        const columns = await Column.find();        
-        res.status(200).send(columns);
+        const { id } = req.params;
+        await Column.deleteOne({ _id: id, userId: req.user.userId });
+        await task.deleteMany({ columnId: id });
+        res.status(200).send({ message: 'Column deleted successfully' });
     }
     catch (error) {
         res.status(500).send({ error: error.message });
