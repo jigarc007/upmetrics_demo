@@ -71,7 +71,8 @@ const TaskBoardApp = () => {
   const createBoard = () => {
     if (boardName.trim()) {
       const user=JSON.parse(localStorage.getItem('user'));
-      api.post('/column/add', { name: boardName, position: 0, userId: user.id })
+      console.log('Creating board for user:', user);
+      api.post('/column/add', { name: boardName, position: 0, userId: user._id })
       .then(response => {  
         const newBoard = response.data.data;
         setBoards([...boards, { id: newBoard._id, name: newBoard.name, tasks: [] }]);
